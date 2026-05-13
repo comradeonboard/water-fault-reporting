@@ -26,3 +26,24 @@ https://github.com/comradeonboard/water-fault-reporting
 
 ## Photo uploads
 - Report photo data can be sent as a base64-encoded string in the `photo` field.
+
+## Docker deployment
+Build and run the backend with Docker:
+
+```bash
+docker build -t water-fault-reporting .
+docker run -it --rm -p 3000:3000 \
+  -e JWT_SECRET="your-super-secret-key" \
+  -v "${PWD}/database.sqlite:/usr/src/app/database.sqlite" \
+  water-fault-reporting
+```
+
+Or use Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+## Environment
+- `JWT_SECRET` should be set in production.
+- If you use Docker Compose, copy `.env.example` to `.env` and update values.

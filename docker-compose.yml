@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      - PORT=3000
+      - JWT_SECRET=change-this-secret
+    volumes:
+      - ./database.sqlite:/usr/src/app/database.sqlite
+    restart: unless-stopped
