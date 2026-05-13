@@ -45,17 +45,12 @@ img {
   justify-content: space-between;
   gap: 20px;
   padding-top: 28px;
-  flex-wrap: wrap;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.main-nav {
-  min-width: 240px;
 }
 
 .logo {
@@ -105,13 +100,7 @@ main {
   align-items: center;
   margin-top: 32px;
 }
-.form-card,
-.hero-card,
-.history-card,
-.features article {
-  width: 100%;
-  max-width: 100%;
-}
+
 .hero-copy {
   max-width: 620px;
 }
@@ -183,38 +172,8 @@ main {
 .features {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 48px 0;
-}
-
-.form-card {
-  padding: 28px;
-}
-
-.history-card {
-  padding: 0;
-}
-
-.status-row select {
-  min-width: 160px;
-  max-width: 280px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface-strong);
-  color: var(--text);
-  padding: 10px 12px;
-}
-
-.history-item {
-  padding: 24px;
-}
-
-.history-item-header {
-  gap: 18px;
-}
-
-.history-meta span {
-  display: block;
 }
 
 .section-header,
@@ -426,44 +385,6 @@ main {
   .features {
     grid-template-columns: 1fr;
   }
-
-  .main-nav {
-    width: 100%;
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 760px) {
-  .site-header {
-    justify-content: center;
-    text-align: center;
-  }
-
-  .hero-copy h2 {
-    font-size: 2rem;
-  }
-
-  .features article,
-  .form-card,
-  .history-card {
-    padding: 20px;
-  }
-
-  .history-item {
-    padding: 20px;
-  }
-
-  .status-row {
-    width: 100%;
-    justify-content: space-between;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .status-row select {
-    width: 100%;
-    max-width: 100%;
-  }
 }
 
 @media (max-width: 640px) {
@@ -473,24 +394,13 @@ main {
     padding: 16px;
   }
 
-  .hero-copy h2 {
-    font-size: 1.8rem;
-  }
-
   .form-actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .form-row {
-    margin-bottom: 16px;
-  }
-
-  .history-item {
-    gap: 14px;
-  }
-
-  .history-meta {
-    font-size: 0.92rem;
+  .history-table th,
+  .history-table td {
+    padding: 12px 10px;
   }
 }

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -18,7 +18,6 @@
     <nav class="main-nav">
       <a href="#report-form">Report Fault</a>
       <a href="#history">History</a>
-      <button id="logoutButton" class="button button-secondary button-small" type="button">Logout</button>
     </nav>
   </header>
 
@@ -59,10 +58,13 @@
       <div class="section-header">
         <p class="eyebrow">Start a new report</p>
         <h2>Report a water infrastructure fault</h2>
-        <p id="userGreeting" class="user-greeting"></p>
       </div>
 
       <form id="faultForm" class="form-card">
+        <div class="form-row">
+          <label for="reporterEmail">Your email</label>
+          <input id="reporterEmail" name="reporterEmail" type="email" placeholder="you@example.com" required />
+        </div>
         <div class="form-row">
           <label for="location">Location</label>
           <input id="location" name="location" type="text" placeholder="Street, neighbourhood or landmark" required />
@@ -90,6 +92,11 @@
         <div class="form-row full-width">
           <label for="description">Description</label>
           <textarea id="description" name="description" rows="4" placeholder="Add details about the fault" required></textarea>
+        </div>
+        <div class="form-row">
+          <label for="imageUpload">Upload photo</label>
+          <input id="imageUpload" name="imageUpload" type="file" accept="image/*" />
+          <p class="hint">Optional image helps the team verify the issue faster.</p>
         </div>
         <div class="form-actions">
           <button type="submit" class="button button-secondary">Submit Report</button>

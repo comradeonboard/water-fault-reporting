@@ -42,7 +42,12 @@ function createToken(user) {
 }
 
 function authMiddleware(req, res, next) {
-  const token = req.cookies[TOKEN_NAME];
+  const cookieToken = req.cookies[TOKEN_NAME];
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  const bearerToken =
+    authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const token = cookieToken || bearerToken;
+
   if (!token) {
     return res.status(401).json({ error: "Authentication required" });
   }
