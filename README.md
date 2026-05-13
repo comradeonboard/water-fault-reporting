@@ -14,3 +14,15 @@ https://github.com/comradeonboard/water-fault-reporting
 1. `npm install`
 2. `npm start`
 3. Open `http://localhost:3000`
+
+## API notes
+- Register and login return a JSON `token` for mobile auth.
+- Mobile clients should send `Authorization: Bearer <token>` on protected requests.
+- Supported secured endpoints:
+  - `GET /api/me`
+  - `GET /api/reports`
+  - `POST /api/reports`
+  - `PATCH /api/reports/:id/status`
+
+## Photo uploads
+- Report photo data can be sent as a base64-encoded string in the `photo` field.

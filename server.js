@@ -19,7 +19,11 @@ function createToken(user) {
 }
 
 function authMiddleware(req, res, next) {
-  const token = req.cookies[TOKEN_NAME];
+  const cookieToken = req.cookies[TOKEN_NAME];
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  const bearerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const token = cookieToken || bearerToken;
+
   if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -53,7 +57,7 @@ app.post('/api/register', async (req, res) => {
 
     const token = createToken({ id: this.lastID, name, email });
     res.cookie(TOKEN_NAME, token, { httpOnly: true, sameSite: 'lax' });
-    res.json({ id: this.lastID, name, email });
+    res.json({ id: this.lastID, name, email, token });
   });
 });
 
@@ -79,7 +83,7 @@ app.post('/api/login', (req, res) => {
 
     const token = createToken(user);
     res.cookie(TOKEN_NAME, token, { httpOnly: true, sameSite: 'lax' });
-    res.json({ id: user.id, name: user.name, email: user.email });
+    res.json({ id: user.id, name: user.name, email: user.email, token });
   });
 });
 
@@ -93,7 +97,7 @@ app.get('/api/me', authMiddleware, (req, res) => {
 });
 
 app.get('/api/reports', authMiddleware, (req, res) => {
-  const query = `SELECT id, location, issueType, severity, description, status, createdAt, updatedAt
+  const query = `SELECT id, location, issueType, severity, description, photo, status, createdAt, updatedAt
                  FROM reports
                  WHERE userId = ?
                  ORDER BY createdAt DESC`;
@@ -106,7 +110,7 @@ app.get('/api/reports', authMiddleware, (req, res) => {
 });
 
 app.post('/api/reports', authMiddleware, (req, res) => {
-  const { location, issueType, severity, description } = req.body;
+  const { location, issueType, severity, description, photo } = req.body;
   if (!location || !issueType || !severity || !description) {
     return res.status(400).json({ error: 'All fields are required.' });
   }
@@ -114,14 +118,14 @@ app.post('/api/reports', authMiddleware, (req, res) => {
   const createdAt = new Date().toISOString();
   const updatedAt = createdAt;
   const status = 'Open';
-  const query = `INSERT INTO reports (userId, location, issueType, severity, description, status, createdAt, updatedAt)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+  const query = `INSERT INTO reports (userId, location, issueType, severity, description, photo, status, createdAt, updatedAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  db.run(query, [req.user.id, location.trim(), issueType, severity, description.trim(), status, createdAt, updatedAt], function (err) {
+  db.run(query, [req.user.id, location.trim(), issueType, severity, description.trim(), photo || null, status, createdAt, updatedAt], function (err) {
     if (err) {
       return res.status(500).json({ error: 'Unable to save report.' });
     }
-    res.status(201).json({ id: this.lastID, userId: req.user.id, location, issueType, severity, description, status, createdAt, updatedAt });
+    res.status(201).json({ id: this.lastID, userId: req.user.id, location, issueType, severity, description, photo: photo || null, status, createdAt, updatedAt });
   });
 });
 
