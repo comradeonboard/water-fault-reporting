@@ -1,25 +1,16 @@
-const form = document.getElementById('faultForm');
-const reportList = document.getElementById('reportList');
-const formMessage = document.getElementById('formMessage');
-
-const STORAGE_KEY = 'waterFaultReports';
-
-function loadReports() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
-}
-
-function saveReports(reports) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-}
+const form = document.getElementById("faultForm");
+const reportList = document.getElementById("reportList");
+const formMessage = document.getElementById("formMessage");
+const userGreeting = document.getElementById("userGreeting");
+const logoutButton = document.getElementById("logoutButton");
 
 function formatReference(index) {
-  return `WF-${String(index + 1).padStart(4, '0')}`;
+  return `WF-${String(index + 1).padStart(4, "0")}`;
 }
 
 function createStatusChip(status) {
-  const span = document.createElement('span');
-  span.className = `status-chip status-${status.toLowerCase().replace(/\s+/g, '-')}`;
+  const span = document.createElement("span");
+  span.className = `status-chip status-${status.toLowerCase().replace(/\s+/g, "-")}`;
   span.textContent = status;
   return span;
 }
@@ -28,27 +19,52 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
-function createImagePreview(photo) {
-  if (!photo) return null;
-  const img = document.createElement('img');
-  img.src = photo;
-  img.alt = 'Reported issue photo';
-  img.className = 'report-image';
-  return img;
+function showMessage(message, isError = false) {
+  formMessage.textContent = message;
+  formMessage.classList.toggle("error", isError);
+  if (!isError) {
+    setTimeout(() => {
+      formMessage.textContent = "";
+    }, 2500);
+  }
 }
 
-function renderReports() {
-  const reports = loadReports();
-  reportList.innerHTML = '';
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload.error || "Request failed.";
+    throw new Error(message);
+  }
+  return payload;
+}
+
+async function requireAuth() {
+  const response = await fetch("/api/me", { credentials: "include" });
+  if (!response.ok) {
+    window.location.href = "/Auth.html";
+    throw new Error("Unauthorized");
+  }
+  return response.json();
+}
+
+async function loadReports() {
+  const reports = await fetchJson("/api/reports", { credentials: "include" });
+  renderReports(reports);
+}
+
+function renderReports(reports) {
+  reportList.innerHTML = "";
 
   if (!reports.length) {
-    reportList.innerHTML = '<div class="empty-state">No reports yet. Submit the form above.</div>';
+    reportList.innerHTML =
+      '<div class="empty-state">No reports yet. Submit the form above.</div>';
     return;
   }
 
   reports.forEach((report, index) => {
-    const item = document.createElement('article');
-    item.className = 'history-item';
+    const item = document.createElement("article");
+    item.className = "history-item";
 
     item.innerHTML = `
       <div class="history-item-header">
@@ -56,14 +72,13 @@ function renderReports() {
           <p class="eyebrow">Ref ${formatReference(index)}</p>
           <h3>${report.issueType} — ${report.location}</h3>
           <div class="history-meta">
-            <span>${report.reporterEmail}</span>
             <span>Reported: ${formatDate(report.createdAt)}</span>
             <span>Last update: ${formatDate(report.updatedAt)}</span>
           </div>
         </div>
         <div class="status-row">
           ${createStatusChip(report.status).outerHTML}
-          <select data-index="${index}" class="status-select"></select>
+          <select data-report-id="${report.id}" class="status-select"></select>
         </div>
       </div>
       <div class="history-detail">
@@ -75,88 +90,84 @@ function renderReports() {
       </div>
     `;
 
-    const select = item.querySelector('.status-select');
-    ['Open', 'In Progress', 'Resolved'].forEach(value => {
-      const option = document.createElement('option');
+    const select = item.querySelector(".status-select");
+    ["Open", "In Progress", "Resolved"].forEach((value) => {
+      const option = document.createElement("option");
       option.value = value;
       option.textContent = value;
       option.selected = report.status === value;
       select.appendChild(option);
     });
-    select.addEventListener('change', () => updateStatus(index, select.value));
-
-    const imageElement = createImagePreview(report.photo);
-    if (imageElement) {
-      item.appendChild(imageElement);
-    }
+    select.addEventListener("change", async () => {
+      try {
+        await updateStatus(report.id, select.value);
+      } catch (error) {
+        showMessage(error.message, true);
+      }
+    });
 
     reportList.appendChild(item);
   });
 }
 
-function updateStatus(index, status) {
-  const reports = loadReports();
-  reports[index].status = status;
-  reports[index].updatedAt = new Date().toISOString();
-  saveReports(reports);
-  renderReports();
+async function updateStatus(reportId, status) {
+  await fetchJson(`/api/reports/${reportId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+  await loadReports();
 }
 
 function resetForm() {
   form.reset();
-  setTimeout(() => {
-    formMessage.textContent = '';
-  }, 2500);
 }
 
-function readImageFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-form.addEventListener('submit', async (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  const reporterEmail = form.reporterEmail.value.trim();
   const location = form.location.value.trim();
   const issueType = form.issueType.value;
   const severity = form.severity.value;
   const description = form.description.value.trim();
-  const imageFile = form.imageUpload.files[0];
 
-  if (!reporterEmail || !location || !issueType || !severity || !description) {
-    formMessage.textContent = 'Please fill out every field.';
+  if (!location || !issueType || !severity || !description) {
+    showMessage("Please fill out every field.", true);
     return;
   }
 
-  let photo = null;
-  if (imageFile) {
-    photo = await readImageFile(imageFile);
+  try {
+    await fetchJson("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ location, issueType, severity, description }),
+    });
+    showMessage("Report submitted successfully.");
+    resetForm();
+    await loadReports();
+  } catch (error) {
+    showMessage(error.message, true);
   }
-
-  const data = {
-    reporterEmail,
-    location,
-    issueType,
-    severity,
-    description,
-    photo,
-    status: 'Open',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const reports = loadReports();
-  reports.unshift(data);
-  saveReports(reports);
-  renderReports();
-
-  formMessage.textContent = 'Report submitted successfully.';
-  resetForm();
 });
 
-renderReports();
+logoutButton?.addEventListener("click", async () => {
+  await fetch("/api/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+  window.location.href = "/Auth.html";
+});
+
+async function init() {
+  try {
+    const user = await requireAuth();
+    userGreeting.textContent = `Signed in as ${user.name} (${user.email})`;
+    await loadReports();
+  } catch {
+    // Redirect handled in requireAuth.
+  }
+}
+
+init();
